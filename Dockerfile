@@ -2,11 +2,9 @@ FROM golang:1.22.1 AS builder
 
 WORKDIR /app
 
-COPY go.mod go.sum ./
+COPY . .
 
 RUN go mod download
-
-COPY . .
 
 ENV CGO_ENABLED=1 GOOS=linux
 

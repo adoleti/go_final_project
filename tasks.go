@@ -40,8 +40,8 @@ func (s SchedulerStore) Add(t Task) (int, error) {
 	return int(lastInserted), nil
 }
 
-func (s SchedulerStore) Update(t Task) error {
-	_, err := s.db.Exec("UPDATE scheduler SET date = :date, title = :title, comment = :comment, repeat = :repeat WHERE id = :id",
+func (s SchedulerStore) Update(t Task) (int64, error) {
+	result, err := s.db.Exec("UPDATE scheduler SET date = :date, title = :title, comment = :comment, repeat = :repeat WHERE id = :id",
 		sql.Named("date", t.Date),
 		sql.Named("title", t.Title),
 		sql.Named("comment", t.Comment),
@@ -49,11 +49,17 @@ func (s SchedulerStore) Update(t Task) error {
 		sql.Named("id", t.ID))
 
 	if err != nil {
-		return err
+		return 0, err
 	}
 
-	return nil
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return 0, err
+	}
+
+	return rowsAffected, nil
 }
+
 
 func (s SchedulerStore) Delete(id string) error {
 	_, err := s.db.Exec("DELETE FROM scheduler WHERE id = :id",

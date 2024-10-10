@@ -51,7 +51,9 @@ func nextDateHandler(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(nextDate))
+	if _, err := w.Write([]byte(nextDate)); err != nil {
+    fmt.Printf("Error writing response: %v", err)
+	}
 }
 
 func getTaskHandler(store *SchedulerStore) http.HandlerFunc {
@@ -229,21 +231,22 @@ func updateTaskHandler(store *SchedulerStore) http.HandlerFunc {
 			}
 		}
 
-		_, err = store.Get(task.ID)
-		if err != nil {
-			JsonError(w, err.Error(), http.StatusBadRequest)
-			return
-		}
-
-		err = store.Update(task)
+		rowsAffected, err := store.Update(task)
 		if err != nil {
 			JsonError(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
 
+		if rowsAffected == 0 {
+			JsonError(w, `task not found`, http.StatusBadRequest)
+			return
+		}
+
 		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte(`{}`))
+		if _, err := w.Write([]byte(`{}`)); err != nil {
+			fmt.Printf("Error writing response: %v", err)
+		}
 	}
 }
 
@@ -284,7 +287,7 @@ func completeTaskHandler(store *SchedulerStore) http.HandlerFunc {
 
 			w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 			w.WriteHeader(http.StatusOK)
-			w.Write([]byte(`{}`))
+			_, _ = w.Write([]byte(`{}`))
 			return
 		}
 
@@ -303,7 +306,7 @@ func completeTaskHandler(store *SchedulerStore) http.HandlerFunc {
 		}
 		task.Date = nextDate
 
-		err = store.Update(task)
+		_, err = store.Update(task)
 		if err != nil {
 			JsonError(w, `error: cant update task`, http.StatusBadRequest)
 			return
@@ -311,6 +314,6 @@ func completeTaskHandler(store *SchedulerStore) http.HandlerFunc {
 
 		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte(`{}`))
+		_, _ = w.Write([]byte(`{}`))
 	}
 }
